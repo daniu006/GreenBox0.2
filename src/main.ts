@@ -5,12 +5,25 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  
+  app.enableCors({
+    origin: '*', // Cambia esto a tu dominio del frontend en producción
+    credentials: true,
+  });
 
-  await app.listen(process.env.PORT ?? 3000);
+  // Validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Puerto dinámico para Railway
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
+  
+  console.log(`🚀 Application is running on port: ${port}`);
 }
 bootstrap();
