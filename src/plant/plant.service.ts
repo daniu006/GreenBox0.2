@@ -8,22 +8,24 @@ export class PlantService {
   constructor(private prisma: PrismaService) {}
 
   async create(createPlantDto: CreatePlantDto) {
-    
     try {
-    const plant = await this.prisma.plant.create({
-      data: {
-        name: createPlantDto.name,
-        minTemperature: createPlantDto.minTemperature,
-        maxTemperature: createPlantDto.maxTemperature,
-        minHumidity: createPlantDto.minHumidity,
-        maxHumidity: createPlantDto.maxHumidity,
-        lightHours: createPlantDto.lightHours,
-        minWaterLevel: createPlantDto.minWaterLevel,  
-        wateringFrequency: createPlantDto.wateringFrequency,
-      }
-    });
-    console.log("Plant created:", plant);
-    return plant;
+      const plant = await this.prisma.plant.create({
+        data: {
+          name: createPlantDto.name,
+          minTemperature: createPlantDto.minTemperature,
+          maxTemperature: createPlantDto.maxTemperature,
+          minHumidity: createPlantDto.minHumidity,
+          maxHumidity: createPlantDto.maxHumidity,
+          lightHours: createPlantDto.lightHours,
+          minWaterLevel: createPlantDto.minWaterLevel,  
+          wateringFrequency: createPlantDto.wateringFrequency,
+        }
+      });
+
+      return {
+        message: 'Plant created successfully',
+        data: plant,
+      };
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ConflictException('A plant with this name already exists.');  
@@ -34,13 +36,13 @@ export class PlantService {
 
   async findAll() { 
     const plants = await this.prisma.plant.findMany({
-      orderBy: {createdAt: 'asc'},
+      orderBy: { createdAt: 'asc' },
     });
   
     return {
       message: 'Plants retrieved successfully',
+      data: plants,
       total: plants.length,
-      plants,
     };
   }
 
@@ -54,8 +56,8 @@ export class PlantService {
     }
     
     return {
-      message:`This action returns a #${id} plant`,
-      plant,
+      message: `This action returns a #${id} plant`,
+      data: plant,
     };  
   }
 
@@ -68,14 +70,14 @@ export class PlantService {
       throw new NotFoundException('Plant not found');
     }
 
-    const updated = this.prisma.plant.update({
+    const updated = await this.prisma.plant.update({
       where: { id },
       data: updatePlantDto,
     });
 
     return {
-      message:`This action updates a #${id} plant`,
-      plant: updated,
+      message: `This action updates a #${id} plant`,
+      data: updated,
     };
   }
 

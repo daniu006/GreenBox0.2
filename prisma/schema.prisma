@@ -128,8 +128,8 @@ model Alert {
   message       String   @db.Text
   priority      String
   resolved      Boolean  @default(false)
-  createdAt     DateTime @default(now())
 
+  createdAt     DateTime @default(now())
   box           Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
 
   @@index([boxId])

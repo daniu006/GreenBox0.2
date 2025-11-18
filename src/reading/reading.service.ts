@@ -20,16 +20,7 @@ export class ReadingService {
     if (!boxId) {
       throw new NotFoundException('Box not found');
     }
-    // Evaluar lectura y obtener comandos para sensores
-const control = await this.automaticControlService.evaluarLectura(
-  createReadingDto.boxId,
-  {
-    temperature: createReadingDto.temperature,
-    humidity: createReadingDto.humidity,
-    lightHours: createReadingDto.lightHours,
-    waterLevel: createReadingDto.waterLevel,
-  }
-);
+
     const reading = await this.prisma.reading.create({
       data: {
         boxId: createReadingDto.boxId,
@@ -47,6 +38,17 @@ const control = await this.automaticControlService.evaluarLectura(
       },
     }
     }); 
+
+        // Evaluar lectura y obtener comandos para sensores
+const control = await this.automaticControlService.evaluarLectura(
+  createReadingDto.boxId,
+  {
+    temperature: createReadingDto.temperature,
+    humidity: createReadingDto.humidity,
+    lightHours: createReadingDto.lightHours,
+    waterLevel: createReadingDto.waterLevel,
+  }
+);
 
     try {
       await this.statisticService.calculateStatics(createReadingDto.boxId);
@@ -84,37 +86,29 @@ const control = await this.automaticControlService.evaluarLectura(
     return {
       message:'This action returns all reading',
       total: readings.length,
-      readings
+      data:readings
       }
   }
 
   async findOne(id: number) {
-    const box = await this.prisma.box.findUnique({where:{id}});
-    
-    if (!box) {
-      throw new NotFoundException('Box not found');
-    }
-
-    // Obtener la lectura más reciente
-    const reading = await this.prisma.reading.findFirst({
-      where: { boxId: id },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        box: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+  const reading = await this.prisma.reading.findUnique({
+    where: { id },
+    include: {
+      box: {
+        select: { id: true, name: true }
       }
-    });
-
-
-    return {
-      message:`Last successfully obtained reading`,
-      data:reading
     }
+  });
+  
+  if (!reading) {
+    throw new NotFoundException('Reading not found');
   }
+  
+  return {
+    message: 'Reading retrieved successfully',
+    data: reading
+  };
+}
 
   async remove(id: number) {
 
@@ -128,7 +122,6 @@ const control = await this.automaticControlService.evaluarLectura(
 
     return {
       message:`This action removes a #${id} reading`,
-      reading
     };
   }
 }

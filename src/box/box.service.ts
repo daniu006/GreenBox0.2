@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBoxDto } from './dto/create-box.dto';
 import { UpdateBoxDto } from './dto/update-box.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,7 +8,7 @@ export class BoxService {
   constructor(private prisma: PrismaService) {}
 
   async create(createBoxDto: CreateBoxDto) {
-      //Verfica que la planta exista
+    // Verifica que la planta exista
     if (createBoxDto.plantId) {
       const plant = await this.prisma.plant.findUnique({
         where: { id: createBoxDto.plantId },
@@ -18,50 +18,50 @@ export class BoxService {
         throw new NotFoundException('Plant not found');
       }
     }
-     //Verifica que el código de la caja sea único
+    
+    // Verifica que el código de la caja sea único
     const existingBox = await this.prisma.box.findUnique({
       where: { code: createBoxDto.code },
     });
 
     if (existingBox) {
-      throw new NotFoundException('Box with this code already exists');
+      throw new ConflictException('Box with this code already exists');
     }
 
-    //Crea la caja
+    // Crea la caja
     const box = await this.prisma.box.create({
       data: {
         code: createBoxDto.code,
         name: createBoxDto.name,
         plantId: createBoxDto.plantId,
-        wateringCount: createBoxDto.wateringCount,
-        lastWateringDate: createBoxDto.lastWateringDate,
-        ledStatus: createBoxDto.ledStatus,
-        pumpStatus: createBoxDto.pumpStatus,
       },
     });
+    
     return {
-      message:'This action adds a new box',
-      box,
+      message: 'Box created successfully',
+      data: box,
     };
-   }
+  }
 
   async findAll() {
     const boxes = await this.prisma.box.findMany({
-      orderBy: {createdAt: 'asc'},
+      orderBy: { createdAt: 'asc' },
       include: {
-        plant:{
-          select: {name:true}
+        plant: {
+          select: { name: true }
         },
         _count: {
           select: {
             readings: true,
             statistics: true,
+            alerts: true,
           },
         },
       },
     });
+    
     return {
-      message:`This action returns all box`,
+      message: 'Boxes retrieved successfully',
       data: boxes,
       total: boxes.length, 
     };
@@ -71,59 +71,75 @@ export class BoxService {
     const box = await this.prisma.box.findUnique({
       where: { id },
       include: {
-        plant:{
-          select: {name:true}
+        plant: {
+          select: { name: true }
         },
         _count: {
           select: {
             readings: true,
             statistics: true,
+            alerts: true,
           },
         },
       },
     });
+    
     if (!box) {
       throw new NotFoundException('Box not found');
     }
+    
     return {
-      message:`This action returns a #${id} box`,
+      message: `This action returns a #${id} box`,
       data: box,
     };
   }
 
   async update(id: number, updateBoxDto: UpdateBoxDto) {
-    const existingBox = await this.prisma.box.findUnique({
-      where: { id },
-    });
-
+    const existingBox = await this.prisma.box.findUnique({ where: { id } });
+    
     if (!existingBox) {
       throw new NotFoundException('Box not found');
     }
 
-    if (updateBoxDto.plantId) {
+    // Validar que la planta exista si se proporciona plantId
+    if (updateBoxDto.plantId !== undefined) {
       const plant = await this.prisma.plant.findUnique({
         where: { id: updateBoxDto.plantId },
       });
+      
       if (!plant) {
         throw new NotFoundException('Plant not found');
       }
+    }
 
-      const updated = await this.prisma.box.update({
-        where: { id },
-        data: updateBoxDto,
-        include: {
-          plant:{
-            select: {name:true},
-          },
-        },
-      });
+    // Preparar datos para actualización
+    let dataToUpdate = { ...updateBoxDto };
+
+    // Si se asigna una planta diferente, resetear estados
+    if (updateBoxDto.plantId !== undefined && updateBoxDto.plantId !== existingBox.plantId) {
+      dataToUpdate = {
+        ...updateBoxDto,
+        wateringCount: 0,
+        ledStatus: false,
+        pumpStatus: false,
+        lastWateringDate: null,
+      };
+    }
+
+    // Actualizar caja
+    const updated = await this.prisma.box.update({
+      where: { id },
+      data: dataToUpdate,
+      include: {
+        plant: { select: { name: true } },
+      },
+    });
 
     return {
-      message:`This action updates a #${id} box`,
+      message: 'Box updated successfully',
       data: updated,
     };
   }
-}
 
   async remove(id: number) {
     const existingBox = await this.prisma.box.findUnique({

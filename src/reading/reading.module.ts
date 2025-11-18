@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { ReadingService } from './reading.service';
 import { ReadingController } from './reading.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { StatisticService } from 'src/statistic/statistic.service';
-import { AutomaticControlService } from 'src/automatic-control/automatic-control.service';
+import { StatisticModule } from 'src/statistic/statistic.module';
+import { AutomaticControlModule } from 'src/automatic-control/automatic-control.module';
 
 @Module({
-  imports: [PrismaModule,StatisticService,AutomaticControlService],
+  imports: [PrismaModule,StatisticModule,AutomaticControlModule],
   controllers: [ReadingController],
   providers: [ReadingService],
   exports: [ReadingService],

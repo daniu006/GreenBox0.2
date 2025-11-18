@@ -27,7 +27,7 @@ export class AutomaticControlService {
 
   private async verificarParametros(lectura: any, planta: any, boxId: number) {
     if (lectura.temperature < planta.minTemperature || lectura.temperature > planta.maxTemperature) {
-      await this.alertService.crearAlerta(
+      await this.alertService.create(
         boxId,
         'temperature',
         `Temperature out of range: ${lectura.temperature}°C (Required: ${planta.minTemperature}-${planta.maxTemperature}°C)`,
@@ -36,7 +36,7 @@ export class AutomaticControlService {
     }
 
     if (lectura.humidity < planta.minHumidity || lectura.humidity > planta.maxHumidity) {
-      await this.alertService.crearAlerta(
+      await this.alertService.create(
         boxId,
         'humidity',
         `Humidity out of range: ${lectura.humidity}% (Required: ${planta.minHumidity}-${planta.maxHumidity}%)`,
@@ -45,7 +45,7 @@ export class AutomaticControlService {
     }
 
     if (lectura.waterLevel < planta.minWaterLevel) {
-      await this.alertService.crearAlerta(
+      await this.alertService.create(
         boxId,
         'water',
         `Water level too low: ${lectura.waterLevel}% (Minimum: ${planta.minWaterLevel}%)`,

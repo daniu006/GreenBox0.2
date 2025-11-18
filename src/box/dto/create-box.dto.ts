@@ -12,17 +12,4 @@ export class CreateBoxDto {
     @IsNumber()
     plantId?: number;
 
-    @IsNumber()
-    wateringCount: number;
-
-    @IsOptional()
-    @IsString()
-    lastWateringDate?: Date;
-
-    @IsBoolean()
-    ledStatus: boolean;
-
-    @IsBoolean()
-    pumpStatus: boolean;
-
 }

@@ -1,20 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 import { StatisticService } from './statistic.service';
-import { CreateStatisticDto } from './dto/create-statistic.dto';
-import { UpdateStatisticDto } from './dto/update-statistic.dto';
 
 @Controller('statistic')
 export class StatisticController {
   constructor(private readonly statisticService: StatisticService) {}
 
-  @Post()
-  create(@Body() createStatisticDto: CreateStatisticDto) {
-    return this.statisticService.create(createStatisticDto);
+  @Get('box/:boxId')
+  findByBoxId(@Param('boxId') boxId: string) {
+    return this.statisticService.findByBoxId(+boxId);
   }
 
-  @Get()
-  findAll() {
-    return this.statisticService.findAll();
+  @Get('box/:boxId/latest')
+  findLatest(@Param('boxId') boxId: string) {
+    return this.statisticService.findLatestByBoxId(+boxId);
   }
 
   @Get(':id')
@@ -22,13 +20,8 @@ export class StatisticController {
     return this.statisticService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStatisticDto: UpdateStatisticDto) {
-    return this.statisticService.update(+id, updateStatisticDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.statisticService.remove(+id);
+  @Post('calculate/:boxId')
+  calculate(@Param('boxId') boxId: string) {
+    return this.statisticService.calculateStatics(+boxId);
   }
 }
