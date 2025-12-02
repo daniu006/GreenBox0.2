@@ -39,26 +39,33 @@ export class BoxService {
     
     return {
       message: 'Box created successfully',
-      data: box,
+      box
     };
   }
 
   async findAll() {
-    const boxes = await this.prisma.box.findMany({
-      orderBy: { createdAt: 'asc' },
-      include: {
-        plant: {
-          select: { name: true }
-        },
+  const boxes = await this.prisma.box.findMany({
+    orderBy: { createdAt: 'asc' },
+    include: {
+      plant: {
+        select: { name: true },
       },
-    });
-    
-    return {
-      message: 'Boxes retrieved successfully',
-      data: boxes,
-      total: boxes.length, 
-    };
-  }
+    },
+  });
+
+  const formattedBoxes = boxes.map(box => ({
+    id: box.id,
+    code: box.code,
+    name: box.name,
+    plantName: box.plant?.name ?? null,
+  }));
+
+  return {
+    message: 'Boxes retrieved successfully',
+    boxes: formattedBoxes,
+  };
+}
+
 
   async findOne(id: number) {
     const box = await this.prisma.box.findUnique({
@@ -80,10 +87,17 @@ export class BoxService {
     if (!box) {
       throw new NotFoundException('Box not found');
     }
+    const formatted = {
+    id: box.id,
+    code: box.code,
+    name: box.name,
+    plantName: box.plant?.name || null,
+    _count: box._count,
+  };
     
     return {
       message: `This action returns a #${id} box`,
-      data: box,
+      box: formatted,
     };
   }
 
@@ -129,10 +143,15 @@ export class BoxService {
     });
 
     return {
-      message: 'Box updated successfully',
-      data: updated,
-    };
-  }
+    message: 'Box updated successfully',
+    data: {
+      id: updated.id,
+      code: updated.code,
+      name: updated.name,
+      plantName: updated.plant?.name || null,
+    },
+  };
+}
 
   async remove(id: number) {
     const existingBox = await this.prisma.box.findUnique({
