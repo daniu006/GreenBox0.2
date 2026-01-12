@@ -1,13 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
- 
 }
 
 datasource db {
@@ -16,56 +9,52 @@ datasource db {
 }
 
 model Plant {
-  id              Int      @id @default(autoincrement())
-  name            String
-  minTemperature  Float
-  maxTemperature  Float
-  minHumidity     Float
-  maxHumidity     Float
-  lightHours      Float
-  minWaterLevel   Float
-  wateringFrequency Float 
-  createdAt       DateTime @default(now())
-
-  boxes           Box[]
-  guides          Guide[]
+  id                Int      @id @default(autoincrement())
+  name              String
+  minTemperature    Float
+  maxTemperature    Float
+  minHumidity       Float
+  maxHumidity       Float
+  lightHours        Float
+  minWaterLevel     Float
+  wateringFrequency Float
+  createdAt         DateTime @default(now())
+  boxes             Box[]
+  guides            Guide[]
 
   @@map("plants")
 }
 
 model Box {
-  id            Int           @id @default(autoincrement())
-  code          String        @unique
-  name          String
-  plantId       Int?
-  wateringCount Int           @default(0)
-  lastWateringDate DateTime?  
-  ledStatus     Boolean       @default(false)
-  pumpStatus    Boolean       @default(false)
-
-  createdAt     DateTime      @default(now())
-
-  plant         Plant?        @relation(fields: [plantId], references: [id], onDelete: SetNull)
-  statistics    Statistic[]
-  histories     History[]
-  readings      Reading[]
-  alerts        Alert[]
+  id               Int         @id @default(autoincrement())
+  code             String      @unique
+  name             String
+  plantId          Int?
+  wateringCount    Int         @default(0)
+  lastWateringDate DateTime?
+  ledStatus        Boolean     @default(false)
+  pumpStatus       Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  alerts           Alert[]
+  plant            Plant?      @relation(fields: [plantId], references: [id])
+  histories        History[]
+  readings         Reading[]
+  statistics       Statistic[]
 
   @@index([plantId])
   @@map("boxes")
 }
 
 model Reading {
-  id            Int      @id @default(autoincrement())
-  boxId         Int
-  temperature   Float
-  humidity      Float
-  lightHours    Float
-  waterLevel    Float
-  timestamp     DateTime @default(now())
-  
-  createdAt     DateTime @default(now())
-  box           Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  boxId       Int
+  temperature Float
+  humidity    Float
+  lightHours  Float
+  waterLevel  Float
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  box         Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
 
   @@index([boxId])
   @@index([timestamp])
@@ -82,7 +71,6 @@ model Statistic {
   avgWaterLevel   Float
   estimatedHealth Float
   generatedAt     DateTime @default(now())
-
   box             Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
 
   @@unique([boxId, week])
@@ -101,7 +89,6 @@ model History {
   lightHours      Float
   waterLevel      Float
   estimatedHealth Float
-
   box             Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
 
   @@index([boxId, date])
@@ -109,31 +96,29 @@ model History {
 }
 
 model Guide {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   plantId     Int
   title       String
-  description String   @db.Text
+  description String
   step        Int?
   image       String?
-
-  plant       Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  plant       Plant   @relation(fields: [plantId], references: [id], onDelete: Cascade)
 
   @@index([plantId])
   @@map("guides")
 }
 
 model Alert {
-  id            Int      @id @default(autoincrement())
-  boxId         Int
-  type          String
-  message       String   @db.Text
-  priority      String
-  resolved      Boolean  @default(false)
-
-  createdAt     DateTime @default(now())
-  box           Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  boxId     Int
+  type      String
+  message   String
+  priority  String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  box       Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
 
   @@index([boxId])
-  @@index ([resolved])
+  @@index([resolved])
   @@map("alerts")
 }

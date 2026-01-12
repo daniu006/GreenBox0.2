@@ -10,6 +10,8 @@ import { PlantModule } from './plant/plant.module';
 import { ReadingModule } from './reading/reading.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { AutomaticControlModule } from './automatic-control/automatic-control.module';
+import { AuthModule } from './auth/auth.module';
+import { SensorsModule } from './sensors/sensors.module';
 
 
 @Module({
@@ -25,6 +27,8 @@ import { AutomaticControlModule } from './automatic-control/automatic-control.mo
     ReadingModule,
     StatisticModule,
     AutomaticControlModule,
+    AuthModule,
+    SensorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
