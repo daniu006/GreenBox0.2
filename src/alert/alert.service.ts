@@ -168,4 +168,17 @@ export class AlertService {
       message: 'Alert deleted successfully',
     };
   }
+
+
+   async resolveAll(boxId: number) {
+    return this.prisma.alert.updateMany({
+      where: { 
+        boxId: boxId,
+        resolved: false 
+      },
+      data: { 
+        resolved: true 
+      },
+    });
+  }
 }

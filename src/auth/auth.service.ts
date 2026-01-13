@@ -7,7 +7,7 @@ export class AuthService {
 
   async validateBoxCode(code: string) {
     const box = await this.prisma.box.findUnique({
-      where: { code: code },
+      where: { code: code.toUpperCase()},
       include: {
         plant: true,
       },

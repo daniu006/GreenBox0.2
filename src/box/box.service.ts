@@ -67,40 +67,48 @@ export class BoxService {
 }
 
 
-  async findOne(id: number) {
-    const box = await this.prisma.box.findUnique({
-      where: { id },
-      include: {
-        plant: {
-          select: { name: true }
-        },
-        _count: {
-          select: {
-            readings: true,
-            statistics: true,
-            alerts: true,
-          },
+async findOne(id: number) {
+  const box = await this.prisma.box.findUnique({
+    where: { id },
+    include: {
+      plant: {
+        select: { 
+          id: true,
+          name: true 
+        }
+      },
+      _count: {
+        select: {
+          readings: true,
+          statistics: true,
+          alerts: true,
         },
       },
-    });
-    
-    if (!box) {
-      throw new NotFoundException('Box not found');
-    }
-    const formatted = {
-    id: box.id,
-    code: box.code,
-    name: box.name,
-    plantName: box.plant?.name || null,
-    _count: box._count,
-  };
-    
-    return {
-      message: `This action returns a #${id} box`,
-      box: formatted,
-    };
+    },
+  });
+  
+  if (!box) {
+    throw new NotFoundException('Box not found');
   }
 
+  // Retornar con TODOS los campos necesarios
+  return {
+    message: `Box with id ${id} retrieved successfully`,
+    box: {
+      id: box.id,
+      code: box.code,
+      name: box.name,
+      plantId: box.plantId,
+      plantName: box.plant?.name || null,
+      ledStatus: box.ledStatus,
+      pumpStatus: box.pumpStatus,
+      wateringCount: box.wateringCount,
+      lastWateringDate: box.lastWateringDate,
+      createdAt: box.createdAt,
+      _count: box._count,
+    }
+  };
+}
   async update(id: number, updateBoxDto: UpdateBoxDto) {
     const existingBox = await this.prisma.box.findUnique({ where: { id } });
     

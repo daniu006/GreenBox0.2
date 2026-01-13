@@ -1,41 +1,120 @@
-import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  NotFoundException
+} from '@nestjs/common';
 import { ReadingService } from '../reading/reading.service';
 import { BoxService } from '../box/box.service';
+import { AlertService } from '../alert/alert.service'; // Nueva importación
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('sensors')
 export class SensorsController {
-    constructor(
-        private readonly readingService: ReadingService,
-        private readonly boxService: BoxService,
-    ) { }
+  constructor(
+    private readonly readingService: ReadingService,
+    private readonly boxService: BoxService,
+    private readonly alertService: AlertService, // Inyectar AlertService
+    private readonly prisma: PrismaService,
+  ) { }
 
-    // 1. GET /sensors/latest/:boxId
-    @Get('latest/:boxId')
-    async getLatest(@Param('boxId') boxId: string) {
-        const result = await this.readingService.findAll(+boxId, 1);
-        if (!result.data || result.data.length === 0) {
-            throw new NotFoundException('No hay lecturas para esta caja');
-        }
-        // Retorna la lectura más reciente
-        return result.data[0];
+  @Get('latest/:boxId')
+  async getLatest(@Param('boxId') boxId: string) {
+    const result = await this.readingService.findAll(+boxId, 1);
+
+    if (!result.data || result.data.length === 0) {
+      throw new NotFoundException('No readings found for this box');
     }
 
-    // 2. GET /sensors/actuators/:boxId
-    @Get('actuators/:boxId')
-    async getActuators(@Param('boxId') boxId: string) {
-        const response = await this.boxService.findOne(+boxId);
-        return {
-            ledStatus: response.box.ledStatus,
-            pumpStatus: response.box.pumpStatus,
-        };
+    const reading = result.data[0];
+
+    return {
+      temp: reading.temperature,
+      hum: reading.humidity,
+      light: reading.lightHours,
+      water: reading.waterLevel,
+      timestamp: reading.timestamp
+    };
+  }
+
+  @Get('actuators/:boxId')
+  async getActuators(@Param('boxId') boxId: string) {
+    const result = await this.boxService.findOne(+boxId);
+    const box = result.box;
+
+    // Mapeo de nombres para el frontend
+    return {
+      boxId: box.id,
+      boxName: box.name,
+      led: box.ledStatus,
+      pump: box.pumpStatus,
+      wateringCount: box.wateringCount,
+      lastWateringDate: box.lastWateringDate
+    };
+  }
+
+  @Get('history/:boxId/:period')
+  async getHistory(
+    @Param('boxId') boxId: string,
+    @Param('period') period: string
+  ) {
+    const endDate = new Date();
+    const startDate = new Date();
+
+    switch (period) {
+      case '24h':
+        startDate.setHours(startDate.getHours() - 24);
+        break;
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      default:
+        throw new NotFoundException('Invalid period. Use: 24h, 7d, or 30d');
     }
 
-    // 3. POST /sensors/actuators/:boxId (Equivalente a tu ruta /box/:id/actuators)
-    @Post('actuators/:boxId')
-    async updateActuators(
-        @Param('boxId') boxId: string,
-        @Body() updateData: { ledStatus?: boolean; pumpStatus?: boolean },
-    ) {
-        return await this.boxService.update(+boxId, updateData);
+    const readings = await this.prisma.reading.findMany({
+      where: {
+        boxId: +boxId,
+        timestamp: { gte: startDate, lte: endDate }
+      },
+      orderBy: { timestamp: 'asc' },
+    });
+
+    if (readings.length === 0) {
+      throw new NotFoundException('No readings found for this period');
     }
+
+    return readings;
+  }
+
+  // --- NUEVA LÓGICA DE NOTIFICACIONES (PUENTE) ---
+
+  @Get('notifications/:boxId')
+  getNotifications(@Param('boxId') boxId: string) {
+    return this.alertService.getAllAlerts(+boxId);
+  }
+
+
+  @Patch('notifications/:id/read')
+  readNotification(@Param('id') id: string) {
+    return this.alertService.resolveAlert(+id);
+  }
+
+  @Patch('notifications/mark-all-read/:boxId')
+  markAllAsRead(@Param('boxId') boxId: string) {
+    // Este usa el método resolveAll que agregamos al AlertService
+    return this.alertService.resolveAll(+boxId);
+  }
+
+  @Delete('notifications/:id')
+  deleteNotification(@Param('id') id: string) {
+    return this.alertService.remove(+id);
+  }
 }

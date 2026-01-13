@@ -11,6 +11,11 @@ export class ReadingController {
     return this.readingService.create(createReadingDto);
   }
 
+  @Post('esp32')
+async createFromESP32(@Body() createReadingDto: CreateReadingDto) {
+  return this.readingService.create(createReadingDto);
+}
+
   @Get('box/:boxId')
 findAll(@Param('boxId') boxId: string, @Query('limit') limit?: string) {
   return this.readingService.findAll(+boxId, limit ? +limit : undefined);
