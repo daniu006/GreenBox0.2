@@ -91,7 +91,14 @@ export class SensorsController {
       throw new NotFoundException('No readings found for this period');
     }
 
-    return readings;
+    // Mapear campos de la base de datos a los nombres esperados por el frontend
+    return readings.map(r => ({
+      timestamp: r.timestamp,
+      temperature: r.temperature,
+      humidity: r.humidity,
+      light: r.lightHours,
+      water: r.waterLevel
+    }));
   }
 
   // --- NUEVA LÓGICA DE NOTIFICACIONES (PUENTE) ---
