@@ -5,9 +5,10 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Habilitar CORS para conectar con el frontend
+  // Habilitar CORS para conectar con el frontend (móvil y web)
+  const corsOrigin = process.env.CORS_ORIGIN || 'https://front-green-box.vercel.app';
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'https://front-green-box.vercel.app',
+    origin: corsOrigin === '*' ? true : corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -20,7 +21,7 @@ async function bootstrap() {
   }));
 
   const port = process.env.PORT || 3000;
-  await app.listen(port, '0.0.0.0'); 
+  await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

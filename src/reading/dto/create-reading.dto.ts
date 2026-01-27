@@ -9,12 +9,16 @@ export class CreateReadingDto {
     temperature: number;
 
     @IsNumber()
-    humidity: number; 
-    
+    humidity: number;
+
+    @IsNumber()
+    @IsOptional()
+    soilMoisture?: number;
+
     @IsNumber()
     lightHours: number;
 
     @IsNumber()
-    waterLevel: number; 
+    waterLevel: number;
 
 }

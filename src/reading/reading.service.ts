@@ -10,7 +10,7 @@ export class ReadingService {
     private prisma: PrismaService,
     private statisticService: StatisticService,
     private automaticControlService: AutomaticControlService,
-  ) {}
+  ) { }
 
   async create(createReadingDto: CreateReadingDto) {
     const boxId = await this.prisma.box.findUnique({
@@ -26,6 +26,7 @@ export class ReadingService {
         boxId: createReadingDto.boxId,
         temperature: createReadingDto.temperature,
         humidity: createReadingDto.humidity,
+        soilMoisture: createReadingDto.soilMoisture || 0,
         lightHours: createReadingDto.lightHours,
         waterLevel: createReadingDto.waterLevel,
       },
@@ -34,36 +35,37 @@ export class ReadingService {
           select: {
             id: true,
             name: true
-        }
-      },
-    }
-    }); 
+          }
+        },
+      }
+    });
 
-        // Evaluar lectura y obtener comandos para sensores
-const control = await this.automaticControlService.evaluarLectura(
-  createReadingDto.boxId,
-  {
-    temperature: createReadingDto.temperature,
-    humidity: createReadingDto.humidity,
-    lightHours: createReadingDto.lightHours,
-    waterLevel: createReadingDto.waterLevel,
-  }
-);
+    // Evaluar lectura y obtener comandos para sensores
+    const control = await this.automaticControlService.evaluarLectura(
+      createReadingDto.boxId,
+      {
+        temperature: createReadingDto.temperature,
+        humidity: createReadingDto.humidity,
+        soilMoisture: createReadingDto.soilMoisture || 0,
+        lightHours: createReadingDto.lightHours,
+        waterLevel: createReadingDto.waterLevel,
+      }
+    );
 
     try {
       await this.statisticService.calculateStatics(createReadingDto.boxId);
     } catch (error) {
       console.error('Error calculating statistics:', error);
     }
-    return{ 
-  message:'Reading processed successfully',
-  data: reading,
-  commands: control.commands  // Comandos para el ESP32
-   };
+    return {
+      message: 'Reading processed successfully',
+      data: reading,
+      commands: control.commands  // Comandos para el ESP32
+    };
   }
 
   async findAll(boxId: number, limit?: number) {
-    const box = await this.prisma.box.findUnique({where:{id:boxId}});
+    const box = await this.prisma.box.findUnique({ where: { id: boxId } });
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -78,50 +80,50 @@ const control = await this.automaticControlService.evaluarLectura(
           select: {
             id: true,
             name: true
-        }
-      },
-    }
+          }
+        },
+      }
     });
 
     return {
-      message:'This action returns all reading',
+      message: 'This action returns all reading',
       total: readings.length,
-      data:readings
-      }
+      data: readings
+    }
   }
 
   async findOne(id: number) {
-  const reading = await this.prisma.reading.findUnique({
-    where: { id },
-    include: {
-      box: {
-        select: { id: true, name: true }
+    const reading = await this.prisma.reading.findUnique({
+      where: { id },
+      include: {
+        box: {
+          select: { id: true, name: true }
+        }
       }
-    }
-  });
-  
-  if (!reading) {
-    throw new NotFoundException('Reading not found');
-  }
-  
-  return {
-    message: 'Reading retrieved successfully',
-    data: reading
-  };
-}
-
-  async remove(id: number) {
-
-    const reading = await this.prisma.reading.findUnique({where:{id}}); 
+    });
 
     if (!reading) {
       throw new NotFoundException('Reading not found');
     }
-    
-    await this.prisma.reading.delete({where:{id}});
 
     return {
-      message:`This action removes a #${id} reading`,
+      message: 'Reading retrieved successfully',
+      data: reading
+    };
+  }
+
+  async remove(id: number) {
+
+    const reading = await this.prisma.reading.findUnique({ where: { id } });
+
+    if (!reading) {
+      throw new NotFoundException('Reading not found');
+    }
+
+    await this.prisma.reading.delete({ where: { id } });
+
+    return {
+      message: `This action removes a #${id} reading`,
     };
   }
 }

@@ -7,7 +7,7 @@ export class AutomaticControlService {
   constructor(
     private prisma: PrismaService,
     private alertService: AlertService,
-  ) {}
+  ) { }
 
   async evaluarLectura(boxId: number, lecturaData: any) {
     const box = await this.prisma.box.findUnique({
@@ -52,6 +52,24 @@ export class AutomaticControlService {
         'high',
       );
     }
+
+    if (lectura.soilMoisture < (planta.minSoilMoisture || 30.0)) {
+      await this.alertService.create(
+        boxId,
+        'soilMoisture',
+        `Soil moisture too low: ${lectura.soilMoisture}% (Minimum: ${planta.minSoilMoisture || 30.0}%)`,
+        'high',
+      );
+    }
+
+    if (lectura.lightHours < planta.lightHours * 0.5) { // Alerta si hay menos del 50% de luz esperada
+      await this.alertService.create(
+        boxId,
+        'light',
+        `Low light detected: ${lectura.lightHours.toFixed(1)}h (Target: ${planta.lightHours}h)`,
+        'medium',
+      );
+    }
   }
 
   private async controlarActuadores(lectura: any, planta: any, box: any) {
@@ -63,7 +81,8 @@ export class AutomaticControlService {
     let pumpCommand = false;
     let nuevoContador = box.wateringCount;
 
-    if (box.wateringCount < planta.wateringFrequency) {
+    // Lógica mejorada: Activar bomba si la humedad del suelo es baja Y no hemos excedido el límite diario
+    if (lectura.soilMoisture < (planta.minSoilMoisture || 30.0) && box.wateringCount < planta.wateringFrequency) {
       pumpCommand = true;
       nuevoContador = box.wateringCount + 1;
     }

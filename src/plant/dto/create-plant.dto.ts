@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsNotEmpty,Min } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, Min, IsOptional } from 'class-validator';
 
 export class CreatePlantDto {
     @IsString()
@@ -21,8 +21,15 @@ export class CreatePlantDto {
     lightHours: number;
 
     @IsNumber()
-    @Min(0, { message: 'Water level must be 0 or greater' })
     minWaterLevel: number;
+
+    @IsNumber()
+    @IsOptional()
+    minSoilMoisture?: number;
+
+    @IsNumber()
+    @IsOptional()
+    maxSoilMoisture?: number;
 
     @IsNumber()
     wateringFrequency: number;
