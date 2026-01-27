@@ -16,10 +16,9 @@ model Plant {
   minHumidity       Float
   maxHumidity       Float
   lightHours        Float
-  minSoilMoisture   Float    @default(30.0)
-  maxSoilMoisture   Float    @default(80.0)
   minWaterLevel     Float
   wateringFrequency Float
+  minSoilMoisture   Float?
   createdAt         DateTime @default(now())
   boxes             Box[]
   guides            Guide[]
@@ -52,7 +51,7 @@ model Reading {
   boxId        Int
   temperature  Float
   humidity     Float
-  soilMoisture Float    @default(0.0)
+  soilMoisture Float    @default(0)
   lightHours   Float
   waterLevel   Float
   timestamp    DateTime @default(now())
@@ -70,7 +69,6 @@ model Statistic {
   week            Int
   avgTemperature  Float
   avgHumidity     Float
-  avgSoilMoisture Float    @default(0.0)
   avgLightHours   Float
   avgWaterLevel   Float
   estimatedHealth Float
@@ -90,7 +88,6 @@ model History {
   week            Int
   temperature     Float
   humidity        Float
-  soilMoisture    Float    @default(0.0)
   lightHours      Float
   waterLevel      Float
   estimatedHealth Float
