@@ -2,10 +2,11 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { BoxService } from './box.service';
 import { CreateBoxDto } from './dto/create-box.dto';
 import { UpdateBoxDto } from './dto/update-box.dto';
+import { RegisterTokenDto } from './dto/register-token.dto';
 
 @Controller('box')
 export class BoxController {
-  constructor(private readonly boxService: BoxService) {}
+  constructor(private readonly boxService: BoxService) { }
 
   @Post()
   create(@Body() createBoxDto: CreateBoxDto) {
@@ -30,5 +31,14 @@ export class BoxController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.boxService.remove(+id);
+  }
+  @Post(':id/token')
+  registerToken(@Param('id') id: string, @Body() registerTokenDto: RegisterTokenDto) {
+    return this.boxService.registerToken(+id, registerTokenDto);
+  }
+
+  @Post('token/logout')
+  logoutToken(@Body('token') token: string) {
+    return this.boxService.removeToken(token);
   }
 }
