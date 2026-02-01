@@ -1,11 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBoxDto } from './dto/create-box.dto';
 import { UpdateBoxDto } from './dto/update-box.dto';
+import { RegisterTokenDto } from './dto/register-token.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BoxService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createBoxDto: CreateBoxDto) {
     // Verifica que la planta exista
@@ -18,7 +19,7 @@ export class BoxService {
         throw new NotFoundException('Plant not found');
       }
     }
-    
+
     // Verifica que el código de la caja sea único
     const existingBox = await this.prisma.box.findUnique({
       where: { code: createBoxDto.code },
@@ -36,7 +37,7 @@ export class BoxService {
         plantId: createBoxDto.plantId,
       },
     });
-    
+
     return {
       message: 'Box created successfully',
       box
@@ -44,74 +45,74 @@ export class BoxService {
   }
 
   async findAll() {
-  const boxes = await this.prisma.box.findMany({
-    orderBy: { createdAt: 'asc' },
-    include: {
-      plant: {
-        select: { name: true },
-      },
-    },
-  });
-
-  const formattedBoxes = boxes.map(box => ({
-    id: box.id,
-    code: box.code,
-    name: box.name,
-    plantName: box.plant?.name ?? null,
-  }));
-
-  return {
-    message: 'Boxes retrieved successfully',
-    boxes: formattedBoxes,
-  };
-}
-
-
-async findOne(id: number) {
-  const box = await this.prisma.box.findUnique({
-    where: { id },
-    include: {
-      plant: {
-        select: { 
-          id: true,
-          name: true 
-        }
-      },
-      _count: {
-        select: {
-          readings: true,
-          statistics: true,
-          alerts: true,
+    const boxes = await this.prisma.box.findMany({
+      orderBy: { createdAt: 'asc' },
+      include: {
+        plant: {
+          select: { name: true },
         },
       },
-    },
-  });
-  
-  if (!box) {
-    throw new NotFoundException('Box not found');
-  }
+    });
 
-  // Retornar con TODOS los campos necesarios
-  return {
-    message: `Box with id ${id} retrieved successfully`,
-    box: {
+    const formattedBoxes = boxes.map(box => ({
       id: box.id,
       code: box.code,
       name: box.name,
-      plantId: box.plantId,
-      plantName: box.plant?.name || null,
-      ledStatus: box.ledStatus,
-      pumpStatus: box.pumpStatus,
-      wateringCount: box.wateringCount,
-      lastWateringDate: box.lastWateringDate,
-      createdAt: box.createdAt,
-      _count: box._count,
+      plantName: box.plant?.name ?? null,
+    }));
+
+    return {
+      message: 'Boxes retrieved successfully',
+      boxes: formattedBoxes,
+    };
+  }
+
+
+  async findOne(id: number) {
+    const box = await this.prisma.box.findUnique({
+      where: { id },
+      include: {
+        plant: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: {
+          select: {
+            readings: true,
+            statistics: true,
+            alerts: true,
+          },
+        },
+      },
+    });
+
+    if (!box) {
+      throw new NotFoundException('Box not found');
     }
-  };
-}
+
+    // Retornar con TODOS los campos necesarios
+    return {
+      message: `Box with id ${id} retrieved successfully`,
+      box: {
+        id: box.id,
+        code: box.code,
+        name: box.name,
+        plantId: box.plantId,
+        plantName: box.plant?.name || null,
+        ledStatus: box.ledStatus,
+        pumpStatus: box.pumpStatus,
+        wateringCount: box.wateringCount,
+        lastWateringDate: box.lastWateringDate,
+        createdAt: box.createdAt,
+        _count: box._count,
+      }
+    };
+  }
   async update(id: number, updateBoxDto: UpdateBoxDto) {
     const existingBox = await this.prisma.box.findUnique({ where: { id } });
-    
+
     if (!existingBox) {
       throw new NotFoundException('Box not found');
     }
@@ -121,7 +122,7 @@ async findOne(id: number) {
       const plant = await this.prisma.plant.findUnique({
         where: { id: updateBoxDto.plantId },
       });
-      
+
       if (!plant) {
         throw new NotFoundException('Plant not found');
       }
@@ -151,15 +152,15 @@ async findOne(id: number) {
     });
 
     return {
-    message: 'Box updated successfully',
-    data: {
-      id: updated.id,
-      code: updated.code,
-      name: updated.name,
-      plantName: updated.plant?.name || null,
-    },
-  };
-}
+      message: 'Box updated successfully',
+      data: {
+        id: updated.id,
+        code: updated.code,
+        name: updated.name,
+        plantName: updated.plant?.name || null,
+      },
+    };
+  }
 
   async remove(id: number) {
     const existingBox = await this.prisma.box.findUnique({
@@ -169,13 +170,55 @@ async findOne(id: number) {
     if (!existingBox) {
       throw new NotFoundException('Box not found');
     }
-    
+
     await this.prisma.box.delete({
       where: { id },
     });
 
     return {
-      message:`This action removes a #${id} box`,
-   };
+      message: `This action removes a #${id} box`,
+    };
+  }
+  async registerToken(id: number, registerTokenDto: RegisterTokenDto) {
+    const box = await this.prisma.box.findUnique({ where: { id } });
+    if (!box) {
+      throw new NotFoundException('Box not found');
+    }
+
+    return this.prisma.deviceToken.upsert({
+      where: { token: registerTokenDto.token },
+      update: {
+        boxId: id,
+        isLoggedIn: registerTokenDto.isLoggedIn ?? true,
+        lastActive: new Date(),
+      },
+      create: {
+        token: registerTokenDto.token,
+        boxId: id,
+        isLoggedIn: registerTokenDto.isLoggedIn ?? true,
+      },
+    });
+  }
+
+  async removeToken(token: string) {
+    // Marcar como no logueado
+    try {
+      return await this.prisma.deviceToken.update({
+        where: { token },
+        data: { isLoggedIn: false },
+      });
+    } catch (error) {
+      throw new NotFoundException('Token not found');
+    }
+  }
+
+  async deleteToken(token: string) {
+    try {
+      return await this.prisma.deviceToken.delete({
+        where: { token },
+      });
+    } catch (error) {
+      throw new NotFoundException('Token not found');
+    }
   }
 }
