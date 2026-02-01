@@ -18,4 +18,7 @@ export class UpdateBoxDto extends PartialType(CreateBoxDto) {
   @IsOptional()
   @IsDateString()
   lastWateringDate?: string | null;
+
+  @IsOptional()
+  fcmToken?: string;
 }

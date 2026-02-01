@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseNotificationService } from '../notifications/firebase-notification.service';
 
 @Injectable()
 export class AlertService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private firebaseService: FirebaseNotificationService
+  ) { }
 
   async create(
     boxId: number,
@@ -11,7 +15,7 @@ export class AlertService {
     message: string,
     priority: 'high' | 'medium' | 'low'
   ) {
-    
+
     const box = await this.prisma.box.findUnique({ where: { id: boxId } });
     if (!box) {
       throw new NotFoundException(`Box with id ${boxId} not found`);
@@ -53,6 +57,20 @@ export class AlertService {
         },
       },
     });
+
+    // Enviar notificación push si el box tiene un token registrado
+    if (box.fcmToken) {
+      await this.firebaseService.sendPushNotification(
+        box.fcmToken,
+        `Alerta: ${type}`,
+        message,
+        {
+          boxId: boxId.toString(),
+          priority: priority,
+          alertId: newAlert.id.toString(),
+        }
+      );
+    }
 
     return {
       message: 'Alert created successfully',
@@ -170,14 +188,14 @@ export class AlertService {
   }
 
 
-   async resolveAll(boxId: number) {
+  async resolveAll(boxId: number) {
     return this.prisma.alert.updateMany({
-      where: { 
+      where: {
         boxId: boxId,
-        resolved: false 
+        resolved: false
       },
-      data: { 
-        resolved: true 
+      data: {
+        resolved: true
       },
     });
   }

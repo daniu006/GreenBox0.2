@@ -35,6 +35,7 @@ model Box {
   lastWateringDate DateTime?
   ledStatus        Boolean     @default(false)
   pumpStatus       Boolean     @default(false)
+  fcmToken         String?
   createdAt        DateTime    @default(now())
   alerts           Alert[]
   plant            Plant?      @relation(fields: [plantId], references: [id])
