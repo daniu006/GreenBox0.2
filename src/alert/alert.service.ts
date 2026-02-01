@@ -59,16 +59,30 @@ export class AlertService {
     });
 
     // Enviar notificación push si el box tiene un token registrado
-    if (box.fcmToken) {
-      await this.firebaseService.sendPushNotification(
-        box.fcmToken,
-        `Alerta: ${type}`,
-        message,
-        {
-          boxId: boxId.toString(),
-          priority: priority,
-          alertId: newAlert.id.toString(),
-        }
+    // Enviar notificación push a todos los dispositivos logueados
+    const boxWithTokens = await this.prisma.box.findUnique({
+      where: { id: boxId },
+      include: {
+        deviceTokens: {
+          where: { isLoggedIn: true },
+        },
+      },
+    });
+
+    if (boxWithTokens?.deviceTokens?.length) {
+      await Promise.all(
+        boxWithTokens.deviceTokens.map((token) =>
+          this.firebaseService.sendPushNotification(
+            token.token,
+            `Alerta: ${type}`,
+            message,
+            {
+              boxId: boxId.toString(),
+              priority: priority,
+              alertId: newAlert.id.toString(),
+            },
+          ),
+        ),
       );
     }
 
