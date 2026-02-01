@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseNotificationService } from '../notifications/firebase-notification.service';
 
 @Injectable()
 export class AlertService {
+  private readonly logger = new Logger(AlertService.name);
+
   constructor(
     private prisma: PrismaService,
     private firebaseService: FirebaseNotificationService
@@ -59,21 +61,19 @@ export class AlertService {
     });
 
     // Enviar notificación push si el box tiene un token registrado
-    // Enviar notificación push a todos los dispositivos logueados
+    // Enviar notificación push si el box tiene tokens registrados
     const boxWithTokens = await this.prisma.box.findUnique({
       where: { id: boxId },
-      include: {
-        deviceTokens: {
-          where: { isLoggedIn: true },
-        },
-      },
+      select: { fcmTokens: true } // Seleccionamos solo el array de tokens
     });
 
-    if (boxWithTokens?.deviceTokens?.length) {
+    if (boxWithTokens?.fcmTokens?.length) {
+      this.logger.log(`Sending alert to ${boxWithTokens.fcmTokens.length} devices for Box ${boxId}`);
+
       await Promise.all(
-        boxWithTokens.deviceTokens.map((token) =>
+        boxWithTokens.fcmTokens.map((token) =>
           this.firebaseService.sendPushNotification(
-            token.token,
+            token,
             `Alerta: ${type}`,
             message,
             {

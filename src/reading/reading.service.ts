@@ -26,7 +26,7 @@ export class ReadingService {
         boxId: createReadingDto.boxId,
         temperature: createReadingDto.temperature,
         humidity: createReadingDto.humidity,
-        soilMoisture: createReadingDto.soilMoisture || 0,
+        soilMoisture: createReadingDto.soilMoisture !== undefined ? createReadingDto.soilMoisture : 0,
         lightHours: createReadingDto.lightHours,
         waterLevel: createReadingDto.waterLevel,
       },
@@ -46,7 +46,7 @@ export class ReadingService {
       {
         temperature: createReadingDto.temperature,
         humidity: createReadingDto.humidity,
-        soilMoisture: createReadingDto.soilMoisture || 0,
+        soilMoisture: createReadingDto.soilMoisture, // Pass undefined if not present
         lightHours: createReadingDto.lightHours,
         waterLevel: createReadingDto.waterLevel,
       }

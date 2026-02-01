@@ -34,6 +34,8 @@ export class BoxController {
   }
   @Post(':id/token')
   registerToken(@Param('id') id: string, @Body() registerTokenDto: RegisterTokenDto) {
+    console.log(`[BoxServer] 📩 Received registerToken request for Box ID: ${id}`);
+    console.log(`[BoxServer] 📦 Body data:`, JSON.stringify(registerTokenDto));
     return this.boxService.registerToken(+id, registerTokenDto);
   }
 

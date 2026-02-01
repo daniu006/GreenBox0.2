@@ -27,37 +27,26 @@ model Plant {
 }
 
 model Box {
-  id               Int           @id @default(autoincrement())
-  code             String        @unique
+  id               Int         @id @default(autoincrement())
+  code             String      @unique
   name             String
   plantId          Int?
-  wateringCount    Int           @default(0)
+  wateringCount    Int         @default(0)
   lastWateringDate DateTime?
-  ledStatus        Boolean       @default(false)
-  pumpStatus       Boolean       @default(false)
-  createdAt        DateTime      @default(now())
+  ledStatus        Boolean     @default(false)
+  pumpStatus       Boolean     @default(false)
+  manualLed        Boolean     @default(false)
+  manualPump       Boolean     @default(false)
+  createdAt        DateTime    @default(now())
   alerts           Alert[]
-  plant            Plant?        @relation(fields: [plantId], references: [id])
+  plant            Plant?      @relation(fields: [plantId], references: [id])
   histories        History[]
   readings         Reading[]
   statistics       Statistic[]
-  deviceTokens     DeviceToken[]
+  fcmTokens        String[]    @default([])
 
   @@index([plantId])
   @@map("boxes")
-}
-
-model DeviceToken {
-  id         Int      @id @default(autoincrement())
-  token      String   @unique
-  boxId      Int
-  isLoggedIn Boolean  @default(true)
-  lastActive DateTime @default(now())
-  createdAt  DateTime @default(now())
-  box        Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
-
-  @@index([boxId])
-  @@map("device_tokens")
 }
 
 model Reading {

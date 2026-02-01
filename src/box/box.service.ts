@@ -103,9 +103,12 @@ export class BoxService {
         plantName: box.plant?.name || null,
         ledStatus: box.ledStatus,
         pumpStatus: box.pumpStatus,
+        manualLed: box.manualLed,
+        manualPump: box.manualPump,
         wateringCount: box.wateringCount,
         lastWateringDate: box.lastWateringDate,
         createdAt: box.createdAt,
+        fcmTokens: box.fcmTokens,
         _count: box._count,
       }
     };
@@ -185,40 +188,58 @@ export class BoxService {
       throw new NotFoundException('Box not found');
     }
 
-    return this.prisma.deviceToken.upsert({
-      where: { token: registerTokenDto.token },
-      update: {
-        boxId: id,
-        isLoggedIn: registerTokenDto.isLoggedIn ?? true,
-        lastActive: new Date(),
-      },
-      create: {
-        token: registerTokenDto.token,
-        boxId: id,
-        isLoggedIn: registerTokenDto.isLoggedIn ?? true,
-      },
-    });
+    const currentTokens = box.fcmTokens || [];
+    console.log(`[BoxServer] 🔎 Current tokens for box ${id}:`, currentTokens);
+    console.log(`[BoxServer] 🆕 New token to register:`, registerTokenDto.token);
+
+    if (!currentTokens.includes(registerTokenDto.token)) {
+      console.log(`[BoxServer] ✅ Token is new, adding to database...`);
+      const updatedBox = await this.prisma.box.update({
+        where: { id },
+        data: {
+          fcmTokens: {
+            push: registerTokenDto.token
+          }
+        },
+        select: { fcmTokens: true }
+      });
+      console.log(`[BoxServer] ✨ Token added successfully.`);
+      return { message: 'Token registered successfully', currentTokens: updatedBox.fcmTokens };
+    } else {
+      console.log(`[BoxServer] ⚠️ Token already exists. Skipping.`);
+      return { message: 'Token already registered', currentTokens: box.fcmTokens };
+    }
   }
 
   async removeToken(token: string) {
-    // Marcar como no logueado
-    try {
-      return await this.prisma.deviceToken.update({
-        where: { token },
-        data: { isLoggedIn: false },
+    // Buscar cajas que contengan este token
+    const boxes = await this.prisma.box.findMany({
+      where: {
+        fcmTokens: {
+          has: token
+        }
+      }
+    });
+
+    // Eliminar el token de cada caja encontrada
+    for (const box of boxes) {
+      const newTokens = box.fcmTokens.filter(t => t !== token);
+      await this.prisma.box.update({
+        where: { id: box.id },
+        data: {
+          fcmTokens: {
+            set: newTokens
+          }
+        }
       });
-    } catch (error) {
-      throw new NotFoundException('Token not found');
     }
+
+    return { message: 'Token removed successfully' };
   }
 
+  // deleteToken se elimina o se hace alias de removeToken si era necesario, 
+  // pero ya no existe la tabla DeviceToken para eliminar una fila.
   async deleteToken(token: string) {
-    try {
-      return await this.prisma.deviceToken.delete({
-        where: { token },
-      });
-    } catch (error) {
-      throw new NotFoundException('Token not found');
-    }
+    return this.removeToken(token);
   }
 }

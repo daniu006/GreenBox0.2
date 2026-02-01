@@ -75,15 +75,13 @@ export class AutomaticControlService {
   private async controlarActuadores(lectura: any, planta: any, box: any) {
     await this.resetearContadores(box);
 
-    const horasLuzHoy = await this.calcularHorasLuzDia(box.id);
-    const ledCommand = horasLuzHoy < planta.lightHours;
+    // Control COMPLETAMENTE MANUAL por petición del usuario
+    const ledCommand = box.manualLed;
+    const pumpCommand = box.manualPump;
 
-    let pumpCommand = false;
     let nuevoContador = box.wateringCount;
-
-    // Lógica mejorada: Activar bomba si la humedad del suelo es baja Y no hemos excedido el límite diario
-    if (lectura.soilMoisture < (planta.minSoilMoisture || 30.0) && box.wateringCount < planta.wateringFrequency) {
-      pumpCommand = true;
+    if (pumpCommand && !box.pumpStatus) {
+      // Si se acaba de encender la bomba manualmente, aumentamos el contador
       nuevoContador = box.wateringCount + 1;
     }
 

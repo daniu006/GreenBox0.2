@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { IsBoolean, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsDateString, IsString } from 'class-validator';
 import { CreateBoxDto } from './create-box.dto';
 
 export class UpdateBoxDto extends PartialType(CreateBoxDto) {
@@ -16,8 +16,18 @@ export class UpdateBoxDto extends PartialType(CreateBoxDto) {
   pumpStatus?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  manualLed?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  manualPump?: boolean;
+
+  @IsOptional()
   @IsDateString()
   lastWateringDate?: string | null;
 
-
+  @IsOptional()
+  @IsString({ each: true })
+  fcmTokens?: string[];
 }

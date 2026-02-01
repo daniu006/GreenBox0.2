@@ -52,6 +52,8 @@ export class SensorsController {
       boxName: box.name,
       led: box.ledStatus,
       pump: box.pumpStatus,
+      manualLed: box.manualLed,
+      manualPump: box.manualPump,
       wateringCount: box.wateringCount,
       lastWateringDate: box.lastWateringDate
     };
