@@ -12,6 +12,7 @@ import { StatisticModule } from './statistic/statistic.module';
 import { AutomaticControlModule } from './automatic-control/automatic-control.module';
 import { AuthModule } from './auth/auth.module';
 import { SensorsModule } from './sensors/sensors.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 @Module({
@@ -29,8 +30,9 @@ import { SensorsModule } from './sensors/sensors.module';
     AutomaticControlModule,
     AuthModule,
     SensorsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
