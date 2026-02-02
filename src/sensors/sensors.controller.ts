@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ReadingService } from '../reading/reading.service';
 import { BoxService } from '../box/box.service';
-import { AlertService } from '../alert/alert.service'; // Nueva importación
+import { AlertService } from '../alert/alert.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('sensors')
@@ -18,7 +18,7 @@ export class SensorsController {
   constructor(
     private readonly readingService: ReadingService,
     private readonly boxService: BoxService,
-    private readonly alertService: AlertService, // Inyectar AlertService
+    private readonly alertService: AlertService,
     private readonly prisma: PrismaService,
   ) { }
 
@@ -32,11 +32,13 @@ export class SensorsController {
 
     const reading = result.data[0];
 
+    // FIX: Agregar soilMoisture que faltaba
     return {
       temp: reading.temperature,
       hum: reading.humidity,
       light: reading.lightHours,
       water: reading.waterLevel,
+      soilMoisture: reading.soilMoisture,  // <-- ESTO FALTABA
       timestamp: reading.timestamp
     };
   }
@@ -46,7 +48,6 @@ export class SensorsController {
     const result = await this.boxService.findOne(+boxId);
     const box = result.box;
 
-    // Mapeo de nombres para el frontend
     return {
       boxId: box.id,
       boxName: box.name,
@@ -93,23 +94,23 @@ export class SensorsController {
       throw new NotFoundException('No readings found for this period');
     }
 
-    // Mapear campos de la base de datos a los nombres esperados por el frontend
+    // FIX: Agregar soilMoisture al historial también
     return readings.map(r => ({
       timestamp: r.timestamp,
       temperature: r.temperature,
       humidity: r.humidity,
       light: r.lightHours,
-      water: r.waterLevel
+      water: r.waterLevel,
+      soilMoisture: r.soilMoisture  // <-- ESTO FALTABA
     }));
   }
 
-  // --- NUEVA LÓGICA DE NOTIFICACIONES (PUENTE) ---
+  // --- NOTIFICACIONES ---
 
   @Get('notifications/:boxId')
   getNotifications(@Param('boxId') boxId: string) {
     return this.alertService.getAllAlerts(+boxId);
   }
-
 
   @Patch('notifications/:id/read')
   readNotification(@Param('id') id: string) {
@@ -118,7 +119,6 @@ export class SensorsController {
 
   @Patch('notifications/mark-all-read/:boxId')
   markAllAsRead(@Param('boxId') boxId: string) {
-    // Este usa el método resolveAll que agregamos al AlertService
     return this.alertService.resolveAll(+boxId);
   }
 
