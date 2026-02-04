@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import * as path from 'path';
 
 @Injectable()
 export class FirebaseNotificationService implements OnModuleInit {
@@ -14,20 +13,28 @@ export class FirebaseNotificationService implements OnModuleInit {
     }
 
     private initializeFirebase() {
-        // Usamos el nombre simplificado que acabamos de copiar
-        const firebaseCredentialsPath = 'firebase-credentials.json';
-
         if (admin.apps.length === 0) {
             try {
-                const absolutePath = path.resolve(process.cwd(), firebaseCredentialsPath);
-                const serviceAccount = require(absolutePath);
+                // Obtener la configuración de Firebase desde variable de entorno
+                const firebaseConfigBase64 = this.configService.get<string>('FIREBASE_CONFIG_BASE64');
+
+                if (!firebaseConfigBase64) {
+                    this.logger.error('FIREBASE_CONFIG_BASE64 environment variable is not set');
+                    throw new Error('Firebase configuration not found');
+                }
+
+                // Decodificar el Base64 y parsear el JSON
+                const firebaseConfigJson = Buffer.from(firebaseConfigBase64, 'base64').toString('utf-8');
+                const serviceAccount = JSON.parse(firebaseConfigJson);
 
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccount),
                 });
-                this.logger.log('Firebase Admin initialized successfully');
+
+                this.logger.log('Firebase Admin initialized successfully from Base64 config');
             } catch (error) {
                 this.logger.error('Failed to initialize Firebase Admin', error);
+                throw error;
             }
         }
     }
@@ -58,7 +65,7 @@ export class FirebaseNotificationService implements OnModuleInit {
                         channelId: 'PushNotifications',
                         priority: 'high',
                         defaultSound: true,
-                        clickAction: 'FCM_PLUGIN_ACTIVITY', // Necesario para Capacitor
+                        clickAction: 'FCM_PLUGIN_ACTIVITY',
                     }
                 }
             };
