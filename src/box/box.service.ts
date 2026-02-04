@@ -75,7 +75,13 @@ export class BoxService {
         plant: {
           select: {
             id: true,
-            name: true
+            name: true,
+            minTemperature: true,
+            maxTemperature: true,
+            minHumidity: true,
+            maxHumidity: true,
+            minSoilMoisture: true,
+            lightHours: true
           }
         },
         _count: {
@@ -101,6 +107,7 @@ export class BoxService {
         name: box.name,
         plantId: box.plantId,
         plantName: box.plant?.name || null,
+        plant: box.plant,
         ledStatus: box.ledStatus,
         pumpStatus: box.pumpStatus,
         manualLed: box.manualLed,

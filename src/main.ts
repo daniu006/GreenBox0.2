@@ -6,7 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Habilitar CORS para conectar con el frontend (móvil y web)
-  const corsOrigin = process.env.CORS_ORIGIN || 'https://front-green-box.vercel.app';
+  const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
     origin: corsOrigin === '*' ? true : corsOrigin,
     credentials: true,

@@ -4,22 +4,23 @@ import { CreateReadingDto } from './dto/create-reading.dto';
 
 @Controller('reading')
 export class ReadingController {
-  constructor(private readonly readingService: ReadingService) {}
+  constructor(private readonly readingService: ReadingService) { }
 
   @Post()
   create(@Body() createReadingDto: CreateReadingDto) {
+    console.log(`[ReadingServer] 📥 Received reading from Box: ${createReadingDto.boxId}`);
     return this.readingService.create(createReadingDto);
   }
 
   @Post('esp32')
-async createFromESP32(@Body() createReadingDto: CreateReadingDto) {
-  return this.readingService.create(createReadingDto);
-}
+  async createFromESP32(@Body() createReadingDto: CreateReadingDto) {
+    return this.readingService.create(createReadingDto);
+  }
 
   @Get('box/:boxId')
-findAll(@Param('boxId') boxId: string, @Query('limit') limit?: string) {
-  return this.readingService.findAll(+boxId, limit ? +limit : undefined);
-}
+  findAll(@Param('boxId') boxId: string, @Query('limit') limit?: string) {
+    return this.readingService.findAll(+boxId, limit ? +limit : undefined);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
