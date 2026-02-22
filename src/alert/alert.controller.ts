@@ -3,15 +3,15 @@ import { AlertService } from './alert.service';
 
 @Controller('alert')
 export class AlertController {
-  constructor(private readonly alertService: AlertService) {}
+  constructor(private readonly alertService: AlertService) { }
 
- 
+
   @Get('box/:boxId/active')
   getActive(@Param('boxId') boxId: string) {
     return this.alertService.activeAlerts(+boxId);
   }
 
- 
+
   @Get('box/:boxId')
   getAllByBox(@Param('boxId') boxId: string) {
     return this.alertService.getAllAlerts(+boxId);
@@ -20,6 +20,11 @@ export class AlertController {
   @Patch(':id/resolve')
   resolve(@Param('id') id: string) {
     return this.alertService.resolveAlert(+id);
+  }
+
+  @Patch('box/:boxId/resolve-all')
+  resolveAll(@Param('boxId') boxId: string) {
+    return this.alertService.resolveAll(+boxId);
   }
 
   @Delete(':id')
