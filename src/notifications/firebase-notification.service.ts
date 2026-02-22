@@ -6,6 +6,7 @@ import * as admin from 'firebase-admin';
 @Injectable()
 export class FirebaseNotificationService implements OnModuleInit {
     private readonly logger = new Logger(FirebaseNotificationService.name);
+    private firebaseReady = false;
 
     constructor(private configService: ConfigService) { }
 
@@ -14,29 +15,35 @@ export class FirebaseNotificationService implements OnModuleInit {
     }
 
     private initializeFirebase() {
-        if (admin.apps.length === 0) {
-            try {
-                // Obtener la configuración de Firebase desde variable de entorno
-                const firebaseConfigBase64 = this.configService.get<string>('FIREBASE_CONFIG_BASE64');
+        if (admin.apps.length > 0) {
+            this.firebaseReady = true;
+            return;
+        }
 
-                if (!firebaseConfigBase64) {
-                    this.logger.error('FIREBASE_CONFIG_BASE64 environment variable is not set');
-                    throw new Error('Firebase configuration not found');
-                }
+        try {
+            const firebaseConfigBase64 = this.configService.get<string>('FIREBASE_CONFIG_BASE64');
 
-                // Decodificar el Base64 y parsear el JSON
-                const firebaseConfigJson = Buffer.from(firebaseConfigBase64, 'base64').toString('utf-8');
-                const serviceAccount = JSON.parse(firebaseConfigJson);
-
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount),
-                });
-
-                this.logger.log('Firebase Admin initialized successfully from Base64 config');
-            } catch (error) {
-                this.logger.error('Failed to initialize Firebase Admin', error);
-                throw error;
+            if (!firebaseConfigBase64) {
+                // ⚠️ Log del error pero NO lanzar excepción para no crashear el servidor
+                this.logger.error('FIREBASE_CONFIG_BASE64 no está configurada. Las notificaciones push estarán deshabilitadas.');
+                this.firebaseReady = false;
+                return;
             }
+
+            // Decodificar el Base64 y parsear el JSON
+            const firebaseConfigJson = Buffer.from(firebaseConfigBase64, 'base64').toString('utf-8');
+            const serviceAccount = JSON.parse(firebaseConfigJson);
+
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+
+            this.firebaseReady = true;
+            this.logger.log('✅ Firebase Admin inicializado correctamente');
+        } catch (error) {
+            // ⚠️ NO re-lanzar el error — solo loguear y marcar como no disponible
+            this.logger.error('Error inicializando Firebase Admin. Notificaciones push deshabilitadas.', error);
+            this.firebaseReady = false;
         }
     }
 
@@ -46,6 +53,11 @@ export class FirebaseNotificationService implements OnModuleInit {
         body: string,
         data?: Record<string, string>,
     ) {
+        if (!this.firebaseReady) {
+            this.logger.warn('Firebase no está inicializado. Notificación omitida.');
+            return null;
+        }
+
         if (!token) {
             this.logger.warn('No token provided for notification');
             return;
