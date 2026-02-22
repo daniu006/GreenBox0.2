@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async validateBoxCode(code: string) {
     const box = await this.prisma.box.findUnique({
-      where: { code: code.toUpperCase()},
+      where: { code: code.toUpperCase() },
       include: {
         plant: true,
       },
@@ -16,6 +16,16 @@ export class AuthService {
     if (!box) {
       throw new NotFoundException(`La caja con el código ${code} no existe.`);
     }
+
+    // Resetear estado manual de actuadores al hacer login
+    // Esto garantiza que LED y Bomba siempre arranquen apagados en cada sesión
+    await this.prisma.box.update({
+      where: { id: box.id },
+      data: {
+        manualLed: false,
+        manualPump: false,
+      },
+    });
 
     return {
       valid: true,
