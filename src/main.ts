@@ -5,18 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Habilitar CORS para conectar con el frontend (móvil y web)
+  // CORS abierto para permitir conexiones desde la app móvil (Capacitor)
+  // La seguridad se maneja por los códigos de acceso del box
   app.enableCors({
-    origin: [
-      'http://localhost',
-      'capacitor://localhost',
-      'http://localhost:8100',
-      'http://127.0.0.1:8100',
-      process.env.CORS_ORIGIN,
-    ].filter(Boolean), // Eliminar nulos o indefinidos
+    origin: true, // Acepta cualquier origen y refleja el Origin de la petición
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
   });
 
   app.useGlobalPipes(new ValidationPipe({
