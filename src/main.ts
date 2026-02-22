@@ -6,12 +6,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Habilitar CORS para conectar con el frontend (móvil y web)
-  const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
-    origin: corsOrigin === '*' ? true : corsOrigin,
+    origin: [
+      'http://localhost',
+      'capacitor://localhost',
+      'http://localhost:8100',
+      'http://127.0.0.1:8100',
+      process.env.CORS_ORIGIN,
+    ].filter(Boolean), // Eliminar nulos o indefinidos
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
   });
 
   app.useGlobalPipes(new ValidationPipe({
