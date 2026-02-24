@@ -17,16 +17,6 @@ export class AuthService {
       throw new NotFoundException(`La caja con el código ${code} no existe.`);
     }
 
-    // Resetear estado manual de actuadores al hacer login
-    // Esto garantiza que LED y Bomba siempre arranquen apagados en cada sesión
-    await this.prisma.box.update({
-      where: { id: box.id },
-      data: {
-        manualLed: false,
-        manualPump: false,
-      },
-    });
-
     return {
       valid: true,
       boxId: box.id,
