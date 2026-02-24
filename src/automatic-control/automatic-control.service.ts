@@ -75,23 +75,33 @@ export class AutomaticControlService {
   private async controlarActuadores(lectura: any, planta: any, box: any) {
     await this.resetearContadores(box);
 
-    // Control COMPLETAMENTE MANUAL por petición del usuario
-    const ledCommand = box.manualLed;
-    const pumpCommand = box.manualPump;
+    // Re-leer el box fresco desde BD para evitar condición de carrera:
+    // el box original fue consultado al inicio de la petición del ESP32,
+    // pero el usuario pudo haber hecho PATCH a manualPump DESPUÉS de eso.
+    const freshBox = await this.prisma.box.findUnique({ where: { id: box.id } });
 
-    let nuevoContador = box.wateringCount;
-    if (pumpCommand && !box.pumpStatus) {
+    if (!freshBox) {
+      return { led: false, pump: false };
+    }
+
+    const ledCommand = freshBox.manualLed;
+    const pumpCommand = freshBox.manualPump;
+
+    console.log(`[AutoControl] Box ${freshBox.id} → manualPump=${pumpCommand}, manualLed=${ledCommand}`);
+
+    let nuevoContador = freshBox.wateringCount;
+    if (pumpCommand && !freshBox.pumpStatus) {
       // Si se acaba de encender la bomba manualmente, aumentamos el contador
-      nuevoContador = box.wateringCount + 1;
+      nuevoContador = freshBox.wateringCount + 1;
     }
 
     await this.prisma.box.update({
-      where: { id: box.id },
+      where: { id: freshBox.id },
       data: {
         ledStatus: ledCommand,
         pumpStatus: pumpCommand,
         wateringCount: nuevoContador,
-        lastWateringDate: pumpCommand ? new Date() : box.lastWateringDate,
+        lastWateringDate: pumpCommand ? new Date() : freshBox.lastWateringDate,
       },
     });
 
