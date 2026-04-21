@@ -7,12 +7,12 @@ async function bootstrap() {
 
   // CORS abierto para permitir conexiones desde la app móvil (Capacitor)
   // La seguridad se maneja por los códigos de acceso del box
-  app.enableCors({
-    origin: true, // Acepta cualquier origen y refleja el Origin de la petición
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
-  });
+ app.enableCors({
+  origin: (origin, callback) => callback(null, true),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+});
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
